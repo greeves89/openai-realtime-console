@@ -17,6 +17,7 @@ const vite = await createViteServer({
 import pkg from 'twilio';
 const { twiml: Twiml } = pkg;
 
+
 // Endpoint für Twilio Webhook
 app.post("/twilio/voice", express.urlencoded({ extended: false }), (req, res) => {
   const voiceResponse = new Twiml.VoiceResponse();
