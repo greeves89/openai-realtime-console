@@ -19,17 +19,11 @@ const vite = await createViteServer({
 app.post("/twilio/voice", express.urlencoded({ extended: false }), (req, res) => {
   const voiceResponse = new Twiml.VoiceResponse();
 
-  // Startet den Audio-Stream an Deinen WebSocket-Endpunkt
-  voiceResponse.start().stream({
+  // Mit <Connect> wird der Anruf direkt verbunden,
+  // und der <Stream> wird gestartet, um den Audio-Stream an Deine WebSocket-URL zu senden.
+  const connect = voiceResponse.connect();
+  connect.stream({
     url: 'wss://daniel-alisch.site/twilio/audio-stream'
-  });
-
-  // Leitet den Anruf in eine Konferenz weiter, damit der Anruf beantwortet und aktiv gehalten wird
-  const dial = voiceResponse.dial();
-  dial.conference('RealtimeConference', {
-    beep: false,           // optional: unterdrückt den Beep
-    startConferenceOnEnter: true,
-    endConferenceOnExit: true
   });
 
   res.type('text/xml');
