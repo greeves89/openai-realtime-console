@@ -2,6 +2,8 @@ import express from "express";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import "dotenv/config";
+import pkg from 'twilio';
+const { twiml: Twiml } = pkg;
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,25 +15,28 @@ const vite = await createViteServer({
   appType: "custom",
 });
 
-
-import pkg from 'twilio';
-const { twiml: Twiml } = pkg;
-
-
 // Endpoint für Twilio Webhook
 app.post("/twilio/voice", express.urlencoded({ extended: false }), (req, res) => {
   const voiceResponse = new Twiml.VoiceResponse();
-  
-  // Hier definierst Du, was Twilio tun soll – z.B. einen Audio-Stream starten:
+
+  // Startet den Audio-Stream an Deinen WebSocket-Endpunkt
   voiceResponse.start().stream({
     url: 'wss://daniel-alisch.site/twilio/audio-stream'
   });
-  
+
+  // Leitet den Anruf in eine Konferenz weiter, damit der Anruf beantwortet und aktiv gehalten wird
+  const dial = voiceResponse.dial();
+  dial.conference('RealtimeConference', {
+    beep: false,           // optional: unterdrückt den Beep
+    startConferenceOnEnter: true,
+    endConferenceOnExit: true
+  });
+
   res.type('text/xml');
   res.send(voiceResponse.toString());
 });
 
-
+// Stelle sicher, dass die Vite-Middleware danach verwendet wird
 app.use(vite.middlewares);
 
 // API route for token generation
