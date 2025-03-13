@@ -12,6 +12,25 @@ const vite = await createViteServer({
   server: { middlewareMode: true },
   appType: "custom",
 });
+
+
+import pkg from 'twilio';
+const { twiml: Twiml } = pkg;
+
+// Endpoint für Twilio Webhook
+app.post("/twilio/voice", express.urlencoded({ extended: false }), (req, res) => {
+  const voiceResponse = new Twiml.VoiceResponse();
+  
+  // Hier definierst Du, was Twilio tun soll – z.B. einen Audio-Stream starten:
+  voiceResponse.start().stream({
+    url: 'wss://daniel-alisch.site/twilio/audio-stream'
+  });
+  
+  res.type('text/xml');
+  res.send(voiceResponse.toString());
+});
+
+
 app.use(vite.middlewares);
 
 // API route for token generation
