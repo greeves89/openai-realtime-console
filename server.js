@@ -15,12 +15,11 @@ const vite = await createViteServer({
   appType: "custom",
 });
 
-// Endpoint für Twilio Webhook
+// Twilio Webhook-Endpoint
 app.post("/twilio/voice", express.urlencoded({ extended: false }), (req, res) => {
   const voiceResponse = new Twiml.VoiceResponse();
 
-  // Mit <Connect> wird der Anruf direkt verbunden,
-  // und der <Stream> wird gestartet, um den Audio-Stream an Deine WebSocket-URL zu senden.
+  // Mit <Connect> wird der Anruf direkt verbunden und der Audio-Stream gestartet.
   const connect = voiceResponse.connect();
   connect.stream({
     url: 'wss://daniel-alisch.site/twilio/audio-stream'
@@ -30,8 +29,13 @@ app.post("/twilio/voice", express.urlencoded({ extended: false }), (req, res) =>
   res.send(voiceResponse.toString());
 });
 
-// Stelle sicher, dass die Vite-Middleware danach verwendet wird
-app.use(vite.middlewares);
+// Bypass für alle Anfragen, die mit /twilio beginnen – diese sollen nicht von Vite behandelt werden.
+app.use((req, res, next) => {
+  if (req.originalUrl.startsWith("/twilio")) {
+    return next();
+  }
+  vite.middlewares(req, res, next);
+});
 
 // API route for token generation
 app.get("/token", async (req, res) => {
@@ -48,7 +52,7 @@ app.get("/token", async (req, res) => {
           model: "gpt-4o-realtime-preview-2024-12-17",
           voice: "verse",
         }),
-      },
+      }
     );
 
     const data = await response.json();
@@ -59,14 +63,14 @@ app.get("/token", async (req, res) => {
   }
 });
 
-// Render the React client
+// Catch-All-Route: Rendert den React-Client
 app.use("*", async (req, res, next) => {
   const url = req.originalUrl;
 
   try {
     const template = await vite.transformIndexHtml(
       url,
-      fs.readFileSync("./client/index.html", "utf-8"),
+      fs.readFileSync("./client/index.html", "utf-8")
     );
     const { render } = await vite.ssrLoadModule("./client/entry-server.jsx");
     const appHtml = await render(url);
